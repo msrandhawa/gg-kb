@@ -108,6 +108,60 @@
 			   this is the default page, feel free to modify it to either redirect to a controller or display whatever
 			   content you may choose. Below is a list of controllers that are currently deployed in this application,
 			   click on each to execute its default action:</p>
+			   
+		    <p>
+			
+				Read the JSON object, obtained from the REST API at the specified URL, into corresponding Java objects 
+			
+				int timesTried = 0;
+				while (timesTried <= retryTimes) {
+					speedLimit.checkSpeedLimit();
+					InputStream is = null;
+					try {
+						URLConnection yc = url.openConnection();
+						yc.setReadTimeout(300000);
+						yc.setConnectTimeout(120000);
+						is = yc.getInputStream();
+
+						BufferedReader streamReader = new BufferedReader(
+								new InputStreamReader(is, "UTF-8"));
+						StringBuilder responseStrBuilder = new StringBuilder();
+
+						String inputStr;
+						while ((inputStr = streamReader.readLine()) != null) {
+							responseStrBuilder.append(inputStr);
+						}
+
+						Gson gson = new Gson();
+
+						String inputJsonStr = responseStrBuilder.toString();
+
+						JsonParser parser = new JsonParser();
+						JsonArray jArray = parser.parse(inputJsonStr).getAsJsonArray();
+
+						for (JsonElement postJsonObj : jArray) {
+							Posts posts = gson.fromJson(postJsonObj, Posts.class);
+
+							is.close();
+							is = null;
+
+						}
+
+					} catch (Exception e) {
+						timesTried++;
+						if (timesTried >= retryTimes) {
+							throw new RuntimeException("have tried url: " + url + " "
+									+ retryTimes + " times, all failed.", e);
+						}
+						LOGGER.warn("Failed to call " + url + ", retrying "
+								+ timesTried + " Error: " + e);
+					} finally {
+						if (is != null) {
+							is.close();
+						}
+					}
+
+			</p>
 
 			<div id="controller-list" role="navigation">
 				<h2>Available Controllers:</h2>
